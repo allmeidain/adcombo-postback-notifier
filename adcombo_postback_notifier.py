@@ -61,6 +61,11 @@ def send_email(hold_data):
         print(f"Erro ao enviar e-mail: {e}")
         return False
 
+@app.route('/ping', methods=['GET'])
+def ping():
+    """Endpoint para manter o serviço ativo."""
+    return "Service is awake!", 200
+
 @app.route('/postback', methods=['GET'])
 def handle_postback():
     """Processa o Postback da AdCombo."""
