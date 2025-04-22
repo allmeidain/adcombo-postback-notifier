@@ -19,20 +19,28 @@ SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))  # Valor padrão
 if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
     raise ValueError("Uma ou mais variáveis de ambiente não estão definidas: API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER")
 
-def send_email(hold_data, status):
-    """Envia e-mail com detalhes do Postback, incluindo o status."""
+def send_email(postback_data):
+    """Envia e-mail com todos os parâmetros do Postback."""
     msg = MIMEMultipart()
     msg['From'] = EMAIL_SENDER
     msg['To'] = EMAIL_RECEIVER
-    msg['Subject'] = f"Novo Postback Recebido - ID {hold_data['conversion_id']}"
+    msg['Subject'] = f"Novo Postback Recebido - ID {postback_data['trans_id']}"
 
     body = f"""
     Novo Postback recebido em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:
-    - Status: {status}
-    - ID da Conversão: {hold_data['conversion_id']}
-    - Oferta: {hold_data['offer_name']}
-    - Valor: {hold_data['amount']} {hold_data['currency']}
-    - Data: {hold_data['created_at']}
+    - Datetime: {postback_data['datetime']}
+    - Timestamp: {postback_data['timestamp']}
+    - Created At: {postback_data['created']}
+    - Offer Name: {postback_data['offer_id']}
+    - Rotator ID: {postback_data['rotator_id']}
+    - Transaction ID: {postback_data['trans_id']}
+    - Amount: {postback_data['revenue']}
+    - Status: {postback_data['status']}
+    - Goal: {postback_data['goal']}
+    - Click ID: {postback_data['clickid']}
+    - Click ID (alternative): {postback_data['click_id']}
+    - Sub ID: {postback_data['subid']}
+    - Sub ID (alternative): {postback_data['sub_id']}
     """
     msg.attach(MIMEText(body, 'plain'))
 
@@ -45,7 +53,7 @@ def send_email(hold_data, status):
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
         print("Login SMTP bem-sucedido")
         server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, msg.as_string())
-        print(f"E-mail enviado para Postback ID {hold_data['conversion_id']} - Destinatário: {EMAIL_RECEIVER}")
+        print(f"E-mail enviado para Postback ID {postback_data['trans_id']} - Destinatário: {EMAIL_RECEIVER}")
         server.quit()
         return True
     except Exception as e:
@@ -67,19 +75,26 @@ def handle_postback():
     if received_api_key != API_KEY:
         return "Chave de API inválida", 403
 
-    # Obtém os parâmetros do Postback
-    status = request.args.get('status')
-    hold_data = {
-        'conversion_id': request.args.get('conversion_id', 'N/A'),
-        'offer_name': request.args.get('offer_name', 'N/A'),
-        'amount': request.args.get('amount', 'N/A'),
-        'currency': request.args.get('currency', 'N/A'),
-        'created_at': request.args.get('created_at', 'N/A')
+    # Obtém todos os parâmetros do Postback
+    postback_data = {
+        'datetime': request.args.get('datetime', 'N/A'),
+        'timestamp': request.args.get('timestamp', 'N/A'),
+        'created': request.args.get('created_at', 'N/A'),
+        'offer_id': request.args.get('offer_name', 'N/A'),
+        'rotator_id': request.args.get('rotator_id', 'N/A'),
+        'trans_id': request.args.get('trans_id', 'N/A'),
+        'revenue': request.args.get('amount', 'N/A'),
+        'status': request.args.get('status', 'N/A'),
+        'goal': request.args.get('goal', 'N/A'),
+        'clickid': request.args.get('clickid', 'N/A'),
+        'click_id': request.args.get('click_id', 'N/A'),
+        'subid': request.args.get('subid', 'N/A'),
+        'sub_id': request.args.get('sub_id', 'N/A')
     }
 
-    # Envia e-mail com o status
-    if send_email(hold_data, status):
-        return f"Postback processado e e-mail enviado (Status: {status})", 200
+    # Envia e-mail com todos os parâmetros
+    if send_email(postback_data):
+        return f"Postback processado e e-mail enviado (Status: {postback_data['status']})", 200
     else:
         return "Erro ao enviar e-mail", 500
 
