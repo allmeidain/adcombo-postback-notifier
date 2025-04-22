@@ -50,12 +50,16 @@ def send_email(hold_data):
     msg.attach(MIMEText(body, 'plain'))
 
     try:
+        print(f"Tentando enviar e-mail de {EMAIL_SENDER} para {EMAIL_RECEIVER}")
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        print("Conexão SMTP estabelecida")
         server.starttls()
+        print("STARTTLS ativado")
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        print("Login SMTP bem-sucedido")
         server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, msg.as_string())
+        print(f"E-mail enviado para hold ID {hold_data['conversion_id']} - Destinatário: {EMAIL_RECEIVER}")
         server.quit()
-        print(f"E-mail enviado para hold ID {hold_data['conversion_id']}")
         return True
     except Exception as e:
         print(f"Erro ao enviar e-mail: {e}")
@@ -71,8 +75,8 @@ def handle_postback():
     """Processa o Postback da AdCombo."""
     # Verifica a chave de API
     received_api_key = request.args.get('api_key')
-    print(f"API_KEY configurada: {API_KEY}")  # Linha de depuração
-    print(f"Chave recebida: {received_api_key}")  # Linha de depuração
+    print(f"API_KEY configurada: {API_KEY}")
+    print(f"Chave recebida: {received_api_key}")
     if received_api_key != API_KEY:
         return "Chave de API inválida", 403
 
