@@ -43,6 +43,7 @@ def send_email(hold_data):
     body = f"""
     Novo hold detectado em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:
     - ID da Conversão: {hold_data['conversion_id']}
+    - Status: {hold_data['status']}
     - Oferta: {hold_data['offer_name']}
     - Valor: {hold_data['amount']} {hold_data['currency']}
     - Data: {hold_data['created_at']}
