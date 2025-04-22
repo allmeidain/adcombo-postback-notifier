@@ -82,8 +82,8 @@ def handle_postback():
 
     # Obtém os parâmetros do Postback
     status = request.args.get('status')
-    if status != 'hold':
-        return "Ignorado: Não é um hold", 200
+#    if status != 'HOLD':
+#        return "Ignorado: Não é um hold", 200
 
     hold_data = {
         'conversion_id': request.args.get('conversion_id', 'N/A'),
