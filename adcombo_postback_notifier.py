@@ -8,14 +8,18 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# Configurações
-API_KEY = "SUA_CHAVE_API_ADCOMBO"  # Substitua pela sua chave
-EMAIL_SENDER = "seu_email@gmail.com"  # Seu e-mail
-EMAIL_PASSWORD = "sua_senha_app"  # Senha do app (para Gmail, gere em Configurações de Segurança)
-EMAIL_RECEIVER = "destinatario@exemplo.com"  # E-mail que receberá as notificações
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+# Configurações (lidas de variáveis de ambiente)
+API_KEY = os.environ.get("API_KEY")
+EMAIL_SENDER = os.environ.get("EMAIL_SENDER")
+EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER")
+SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")  # Valor padrão
+SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))  # Valor padrão
 HOLDS_FILE = "holds.json"
+
+# Verifica se as variáveis obrigatórias estão definidas
+if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
+    raise ValueError("Uma ou mais variáveis de ambiente não estão definidas: API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER")
 
 def load_processed_holds():
     """Carrega holds já processados do arquivo."""
@@ -62,6 +66,8 @@ def handle_postback():
     """Processa o Postback da AdCombo."""
     # Verifica a chave de API
     received_api_key = request.args.get('api_key')
+    print(f"API_KEY configurada: {API_KEY}")  # Linha de depuração
+    print(f"Chave recebida: {received_api_key}")  # Linha de depuração
     if received_api_key != API_KEY:
         return "Chave de API inválida", 403
 
