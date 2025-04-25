@@ -22,7 +22,7 @@ if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
 def send_email(postback_data):
     """Envia e-mail com todos os parâmetros do Postback."""
     msg = MIMEMultipart()
-    msg['From'] = f"My_Tracker@My_tracker.com"
+    msg['From'] = EMAIL_SENDER
     msg['To'] = EMAIL_RECEIVER
     msg['Subject'] = f"Novo Postback Recebido - ID {postback_data['trans_id']}"
 
