@@ -27,7 +27,6 @@ def send_email(postback_data):
     msg['Subject'] = f"Novo Postback Recebido - ID {postback_data['trans_id']}"
 
     body = f"""
-    Novo Postback recebido em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:
     - Offer Name: {postback_data['offer_id']}
     - Amount: {postback_data['revenue']}
     - Status: {postback_data['status']}
@@ -41,6 +40,7 @@ def send_email(postback_data):
     - Click ID (alternative): {postback_data['click_id']}
     - Sub ID: {postback_data['subid']}
     - Sub ID (alternative): {postback_data['sub_id']}
+    Novo Postback recebido em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:
     """
     msg.attach(MIMEText(body, 'plain'))
 
