@@ -28,16 +28,16 @@ def send_email(postback_data):
 
     body = f"""
     Novo Postback recebido em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:
+    - Offer Name: {postback_data['offer_id']}
+    - Amount: {postback_data['revenue']}
+    - Status: {postback_data['status']}
+    - Transaction ID: {postback_data['trans_id']}
+    - Click ID: {postback_data['clickid']}
     - Datetime: {postback_data['datetime']}
     - Timestamp: {postback_data['timestamp']}
     - Created At: {postback_data['created']}
-    - Offer Name: {postback_data['offer_id']}
     - Rotator ID: {postback_data['rotator_id']}
-    - Transaction ID: {postback_data['trans_id']}
-    - Amount: {postback_data['revenue']}
-    - Status: {postback_data['status']}
     - Goal: {postback_data['goal']}
-    - Click ID: {postback_data['clickid']}
     - Click ID (alternative): {postback_data['click_id']}
     - Sub ID: {postback_data['subid']}
     - Sub ID (alternative): {postback_data['sub_id']}
