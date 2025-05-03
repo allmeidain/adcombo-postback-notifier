@@ -1,4 +1,4 @@
-# Versão: v3.6 - Data: 2025-05-03
+# Versão: v3.7 - Data: 2025-05-03
 
 from flask import Flask, request
 import os
