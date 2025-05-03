@@ -65,20 +65,20 @@ def send_telegram_notification(postback_data):
         print("Notificação Telegram ignorada: TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não configurados.")
         return False
 
+    # Mensagem em texto simples, sem Markdown
     message = (
-        f"- *Offer ID*: {postback_data['offer_id']}\n"
-        f"- *Revenue*: {postback_data['revenue']}\n"
-        f"- *Status*: {postback_data['status']}\n"
-        f"- *Transaction ID*: {postback_data['trans_id']}\n"
-        f"- *Click ID*: {postback_data['clickid']}\n"
-        f"- *Datetime*: {postback_data['datetime']}\n"
+        f"- Offer ID: {postback_data['offer_id']}\n"
+        f"- Revenue: {postback_data['revenue']}\n"
+        f"- Status: {postback_data['status']}\n"
+        f"- Transaction ID: {postback_data['trans_id']}\n"
+        f"- Click ID: {postback_data['clickid']}\n"
+        f"- Datetime: {postback_data['datetime']}\n"
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         'chat_id': TELEGRAM_CHAT_ID,
-        'text': message,
-        'parse_mode': 'Markdown'
+        'text': message
     }
 
     try:
