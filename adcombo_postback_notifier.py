@@ -1,6 +1,7 @@
 from flask import Flask, request
 import os
 import smtplib
+import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
@@ -14,10 +15,16 @@ EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER")
 SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")  # Valor padrão
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))  # Valor padrão
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 # Verifica se as variáveis obrigatórias estão definidas
 if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
     raise ValueError("Uma ou mais variáveis de ambiente não estão definidas: API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER")
+
+# Verifica se as variáveis do Telegram estão definidas (opcional, para evitar falhas se não configuradas)
+if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
+    print("Aviso: Variáveis TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não estão definidas. Notificações pelo Telegram serão ignoradas.")
 
 def send_email(postback_data):
     """Envia e-mail com todos os parâmetros do Postback."""
@@ -27,6 +34,7 @@ def send_email(postback_data):
     msg['Subject'] = f"Novo Postback Recebido - ID {postback_data['trans_id']}"
 
     body = f"""
+    Novo Postback recebido em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:
     - Offer Name: {postback_data['offer_id']}
     - Amount: {postback_data['revenue']}
     - Status: {postback_data['status']}
@@ -40,7 +48,6 @@ def send_email(postback_data):
     - Click ID (alternative): {postback_data['click_id']}
     - Sub ID: {postback_data['subid']}
     - Sub ID (alternative): {postback_data['sub_id']}
-    Novo Postback recebido em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:
     """
     msg.attach(MIMEText(body, 'plain'))
 
@@ -58,6 +65,49 @@ def send_email(postback_data):
         return True
     except Exception as e:
         print(f"Erro ao enviar e-mail: {e}")
+        return False
+
+def send_telegram_notification(postback_data):
+    """Envia notificação para o Telegram com todos os parâmetros do Postback."""
+    if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
+        print("Notificação Telegram ignorada: TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não configurados.")
+        return False
+
+    message = (
+        f"*Novo Postback Recebido* - ID {postback_data['trans_id']}\n"
+        f"Recebido em: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"- *Offer Name*: {postback_data['offer_id']}\n"
+        f"- *Amount*: {postback_data['revenue']}\n"
+        f"- *Status*: {postback_data['status']}\n"
+        f"- *Transaction ID*: {postback_data['trans_id']}\n"
+        f"- *Click ID*: {postback_data['clickid']}\n"
+        f"- *Datetime*: {postback_data['datetime']}\n"
+        f"- *Timestamp*: {postback_data['timestamp']}\n"
+        f"- *Created At*: {postback_data['created']}\n"
+        f"- *Rotator ID*: {postback_data['rotator_id']}\n"
+        f"- *Goal*: {postback_data['goal']}\n"
+        f"- *Click ID (alternative)*: {postback_data['click_id']}\n"
+        f"- *Sub ID*: {postback_data['subid']}\n"
+        f"- *Sub ID (alternative)*: {postback_data['sub_id']}"
+    )
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'text': message,
+        'parse_mode': 'Markdown'
+    }
+
+    try:
+        response = requests.post(url, data=payload)
+        if response.status_code == 200:
+            print(f"Notificação Telegram enviada com sucesso para chat ID {TELEGRAM_CHAT_ID}")
+            return True
+        else:
+            print(f"Falha ao enviar notificação Telegram: {response.text}")
+            return False
+    except Exception as e:
+        print(f"Erro ao enviar notificação Telegram: {e}")
         return False
 
 @app.route('/ping', methods=['GET'])
@@ -92,11 +142,14 @@ def handle_postback():
         'sub_id': request.args.get('sub_id', 'N/A')
     }
 
-    # Envia e-mail com todos os parâmetros
-    if send_email(postback_data):
-        return f"Postback processado e e-mail enviado (Status: {postback_data['status']})", 200
+    # Envia notificação por e-mail e Telegram
+    email_success = send_email(postback_data)
+    telegram_success = send_telegram_notification(postback_data)
+
+    if email_success or telegram_success:
+        return f"Postback processado (Status: {postback_data['status']}) - E-mail: {'enviado' if email_success else 'falhou'} - Telegram: {'enviado' if telegram_success else 'falhou'}", 200
     else:
-        return "Erro ao enviar e-mail", 500
+        return "Erro ao enviar notificações por e-mail e Telegram", 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Usa a porta definida pelo Render
