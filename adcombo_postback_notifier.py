@@ -27,28 +27,8 @@ if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
 if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
     print("Aviso: Variáveis TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não estão definidas. Notificações pelo Telegram serão ignoradas.")
 
-def convert_to_recife_timezone(dt_str):
-    """Converte a string de data do UTC para o fuso horário de Recife (America/Recife)."""
-    # Assume que a data de entrada está em UTC
-    utc_tz = pytz.UTC
-    recife_tz = pytz.timezone('America/Recife')
-    
-    # Tenta parsear a string de data
-    try:
-        # Remove '×' inválido e assume formato ISO 8601
-        dt_str = dt_str.replace('×', 't')  # Corrige o símbolo incorreto
-        utc_dt = utc_tz.localize(datetime.fromisoformat(dt_str.replace('Z', '+00:00')))
-        recife_dt = utc_dt.astimezone(recife_tz)
-        return recife_dt.strftime('%Y-%m-%d %H:%M:%S')
-    except ValueError as e:
-        print(f"Erro ao converter data {dt_str}: {e}")
-        return dt_str  # Retorna original se falhar
-
 def send_email(postback_data):
     """Envia e-mail com todos os parâmetros do Postback."""
-    # Converte a data para o fuso de Recife
-    postback_data['datetime'] = convert_to_recife_timezone(postback_data['datetime'])
-
     msg = MIMEMultipart()
     msg['From'] = EMAIL_SENDER
     msg['To'] = EMAIL_RECEIVER
@@ -66,7 +46,7 @@ def send_email(postback_data):
 
     try:
         print(f"Tentando enviar e-mail de {EMAIL_SENDER} para {EMAIL_RECEIVER}")
-        server = smtplib.SMTP(SMTPSERVER, SMTP_PORT)
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)  # Corrigido para SMTP_SERVER
         print("Conexão SMTP estabelecida")
         server.starttls()
         print("STARTTLS ativado")
@@ -85,9 +65,6 @@ def send_telegram_notification(postback_data):
     if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
         print("Notificação Telegram ignorada: TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não configurados.")
         return False
-
-    # Converte a data para o fuso de Recife
-    postback_data['datetime'] = convert_to_recife_timezone(postback_data['datetime'])
 
     # Mensagem em texto simples
     message = (
@@ -149,6 +126,19 @@ def handle_postback():
         'subid': request.args.get('subid', 'N/A'),
         'sub_id': request.args.get('sub_id', 'N/A')
     }
+
+    # Converte o datetime para o fuso horário de Recife
+    recife_tz = pytz.timezone('America/Recife')
+    if postback_data['datetime'] != 'N/A':
+        try:
+            # Assume que o datetime recebido está em UTC (ajuste se for outro fuso)
+            utc_dt = datetime.strptime(postback_data['datetime'], '%Y-%m-%dT%H:%M:%S')
+            utc_dt = pytz.UTC.localize(utc_dt)  # Marca como UTC
+            recife_dt = utc_dt.astimezone(recife_tz)
+            postback_data['datetime'] = recife_dt.strftime('%Y-%m-%d %H:%M:%S %Z')  # Ex.: 2025-05-03 15:00:00 BRT
+        except ValueError as e:
+            print(f"Erro ao converter datetime: {e}")
+            postback_data['datetime'] = f"Erro na conversão: {postback_data['datetime']}"
 
     # Envia notificação por e-mail e Telegram
     email_success = send_email(postback_data)
