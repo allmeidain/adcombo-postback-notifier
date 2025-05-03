@@ -1,3 +1,5 @@
+# Versão: v3.6 - Data: 2025-05-03
+
 from flask import Flask, request
 import os
 import smtplib
@@ -32,16 +34,16 @@ def send_email(postback_data):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_SENDER
     msg['To'] = EMAIL_RECEIVER
-    msg['Subject'] = f"Notificação - Status: {postback_data['status']} ID {postback_data['trans_id']}"
+    msg['Subject'] = f"Notificação - Status: {postback_data['status']} / ID {postback_data['trans_id']}"
 
-    body = f"""
-    - Offer ID: {postback_data['offer_id']}
-    - Revenue: {postback_data['revenue']}
-    - Status: {postback_data['status']}
-    - Transaction ID: {postback_data['trans_id']}
-    - Click ID: {postback_data['click_id']}
-    - Datetime: {postback_data['datetime']}
-    """
+    body = (
+        f"- Transaction ID: {postback_data['trans_id']}\n"
+        f"- Status: {postback_data['status']}\n"
+        f"- Offer ID: {postback_data['offer_id']}\n"
+        f"- Revenue: {postback_data['revenue']}\n"
+        f"- Click ID: {postback_data['click_id']}\n"
+        f"- Datetime: {postback_data['datetime']}\n"
+    )
     msg.attach(MIMEText(body, 'plain'))
 
     try:
@@ -66,7 +68,7 @@ def send_telegram_notification(postback_data):
         print("Notificação Telegram ignorada: TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não configurados.")
         return False
 
-    # Mensagem em texto simples com trans_id como primeira linha e status em linha separada
+    # Mensagem em texto simples com trans_id como primeira linha
     message = (
         f"- Transaction ID: {postback_data['trans_id']}\n"
         f"- Status: {postback_data['status']}\n"
