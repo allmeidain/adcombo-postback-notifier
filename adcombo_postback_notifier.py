@@ -31,10 +31,9 @@ def send_email(postback_data):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_SENDER
     msg['To'] = EMAIL_RECEIVER
-    msg['Subject'] = f"Novo Postback Recebido - ID {postback_data['trans_id']}"
+    msg['Subject'] = f"Postback - ID {postback_data['trans_id']}"
 
     body = f"""
-    Novo Postback recebido em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:
     - Offer Name: {postback_data['offer_id']}
     - Amount: {postback_data['revenue']}
     - Status: {postback_data['status']}
@@ -74,8 +73,6 @@ def send_telegram_notification(postback_data):
         return False
 
     message = (
-        f"*Novo Postback Recebido* - ID {postback_data['trans_id']}\n"
-        f"Recebido em: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         f"- *Offer Name*: {postback_data['offer_id']}\n"
         f"- *Amount*: {postback_data['revenue']}\n"
         f"- *Status*: {postback_data['status']}\n"
