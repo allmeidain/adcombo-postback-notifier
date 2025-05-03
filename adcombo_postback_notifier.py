@@ -40,12 +40,6 @@ def send_email(postback_data):
     - Transaction ID: {postback_data['trans_id']}
     - Click ID: {postback_data['clickid']}
     - Datetime: {postback_data['datetime']}
-    - Timestamp: {postback_data['timestamp']}
-    - Rotator ID: {postback_data['rotator_id']}
-    - Goal: {postback_data['goal']}
-    - Click ID (alternative): {postback_data['click_id']}
-    - Sub ID: {postback_data['subid']}
-    - Sub ID (alternative): {postback_data['sub_id']}
     """
     msg.attach(MIMEText(body, 'plain'))
 
@@ -78,13 +72,7 @@ def send_telegram_notification(postback_data):
         f"- *Transaction ID*: {postback_data['trans_id']}\n"
         f"- *Click ID*: {postback_data['clickid']}\n"
         f"- *Datetime*: {postback_data['datetime']}\n"
-        f"- *Timestamp*: {postback_data['timestamp']}\n"
-        f"- *Rotator ID*: {postback_data['rotator_id']}\n"
-        f"- *Goal*: {postback_data['goal']}\n"
-        f"- *Click ID (alternative)*: {postback_data['click_id']}\n"
-        f"- *Sub ID*: {postback_data['subid']}\n"
-        f"- *Sub ID (alternative)*: {postback_data['sub_id']}"
-    )
+         )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
