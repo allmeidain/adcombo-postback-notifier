@@ -42,7 +42,8 @@ def send_email(postback_data):
         f"- Offer ID: {postback_data['offer_id']}\n"
         f"- Revenue: {postback_data['revenue']}\n"
         f"- Click ID: {postback_data['click_id']}\n"
-        f"- Datetime: {postback_data['datetime']}\n"
+        f"- Datetime Original: {postback_data['datetime_original']}\n"
+        f"- Datetime Local: {postback_data['datetime']}\n"
     )
     msg.attach(MIMEText(body, 'plain'))
 
@@ -75,7 +76,8 @@ def send_telegram_notification(postback_data):
         f"- Offer ID: {postback_data['offer_id']}\n"
         f"- Revenue: {postback_data['revenue']}\n"
         f"- Click ID: {postback_data['click_id']}\n"
-        f"- Datetime: {postback_data['datetime']}\n"
+        f"- Datetime Original: {postback_data['datetime_original']}\n"
+        f"- Datetime Local: {postback_data['datetime']}\n"
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -116,6 +118,7 @@ def handle_postback():
     # Obtém todos os parâmetros do Postback
     postback_data = {
         'datetime': request.args.get('datetime', 'N/A'),
+        'datetime_original': request.args.get('datetime', 'N/A'),  # Armazena a data original
         'offer_id': request.args.get('offer_id', 'N/A'),
         'trans_id': request.args.get('trans_id', 'N/A'),
         'revenue': request.args.get('revenue', 'N/A'),
@@ -127,8 +130,12 @@ def handle_postback():
     recife_tz = pytz.timezone('America/Recife')
     if postback_data['datetime'] != 'N/A':
         try:
-            # Assume que o datetime recebido está em UTC (ajuste se for outro fuso)
-            utc_dt = datetime.strptime(postback_data['datetime'], '%Y-%m-%dT%H:%M:%S')
+            # Tenta converter com o formato ISO (com T)
+            try:
+                utc_dt = datetime.strptime(postback_data['datetime'], '%Y-%m-%dT%H:%M:%S')
+            except ValueError:
+                # Se falhar, tenta com o formato sem T (com espaço)
+                utc_dt = datetime.strptime(postback_data['datetime'], '%Y-%m-%d %H:%M:%S')
             utc_dt = pytz.UTC.localize(utc_dt)  # Marca como UTC
             recife_dt = utc_dt.astimezone(recife_tz)
             postback_data['datetime'] = recife_dt.strftime('%Y-%m-%d %H:%M:%S %Z')  # Ex.: 2025-01-01 09:00:00 BRT
