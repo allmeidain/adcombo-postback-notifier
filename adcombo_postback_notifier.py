@@ -1,4 +1,4 @@
-# Versão: v3.7 - Data: 2025-05-03
+# Versão: v3.9 - Data: 2025-05-03
 
 from flask import Flask, request
 import os
@@ -42,6 +42,7 @@ def send_email(postback_data):
         f"- Offer ID: {postback_data['offer_id']}\n"
         f"- Revenue: {postback_data['revenue']}\n"
         f"- Click ID: {postback_data['click_id']}\n"
+        f"- ClickID: {postback_data['clickid']}\n"
         f"- Datetime Original: {postback_data['datetime_original']}\n"
         f"- Datetime Local: {postback_data['datetime']}\n"
     )
@@ -76,6 +77,7 @@ def send_telegram_notification(postback_data):
         f"- Offer ID: {postback_data['offer_id']}\n"
         f"- Revenue: {postback_data['revenue']}\n"
         f"- Click ID: {postback_data['click_id']}\n"
+        f"- ClickID: {postback_data['clickid']}\n"
         f"- Datetime Original: {postback_data['datetime_original']}\n"
         f"- Datetime Local: {postback_data['datetime']}\n"
     )
@@ -123,7 +125,8 @@ def handle_postback():
         'trans_id': request.args.get('trans_id', 'N/A'),
         'revenue': request.args.get('revenue', 'N/A'),
         'status': request.args.get('status', 'N/A'),
-        'click_id': request.args.get('click_id', 'N/A')
+        'click_id': request.args.get('click_id', 'N/A'),
+        'clickid': request.args.get('clickid', 'N/A')
     }
 
     # Converte o datetime para o fuso horário de Recife
