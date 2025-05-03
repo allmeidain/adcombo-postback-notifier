@@ -34,14 +34,13 @@ def send_email(postback_data):
     msg['Subject'] = f"Postback - ID {postback_data['trans_id']}"
 
     body = f"""
-    - Offer Name: {postback_data['offer_id']}
-    - Amount: {postback_data['revenue']}
+    - Offer ID: {postback_data['offer_id']}
+    - Revenue: {postback_data['revenue']}
     - Status: {postback_data['status']}
     - Transaction ID: {postback_data['trans_id']}
     - Click ID: {postback_data['clickid']}
     - Datetime: {postback_data['datetime']}
     - Timestamp: {postback_data['timestamp']}
-    - Created At: {postback_data['created']}
     - Rotator ID: {postback_data['rotator_id']}
     - Goal: {postback_data['goal']}
     - Click ID (alternative): {postback_data['click_id']}
@@ -73,14 +72,13 @@ def send_telegram_notification(postback_data):
         return False
 
     message = (
-        f"- *Offer Name*: {postback_data['offer_id']}\n"
-        f"- *Amount*: {postback_data['revenue']}\n"
+        f"- *Offer ID*: {postback_data['offer_id']}\n"
+        f"- *Revenue*: {postback_data['revenue']}\n"
         f"- *Status*: {postback_data['status']}\n"
         f"- *Transaction ID*: {postback_data['trans_id']}\n"
         f"- *Click ID*: {postback_data['clickid']}\n"
         f"- *Datetime*: {postback_data['datetime']}\n"
         f"- *Timestamp*: {postback_data['timestamp']}\n"
-        f"- *Created At*: {postback_data['created']}\n"
         f"- *Rotator ID*: {postback_data['rotator_id']}\n"
         f"- *Goal*: {postback_data['goal']}\n"
         f"- *Click ID (alternative)*: {postback_data['click_id']}\n"
@@ -126,11 +124,10 @@ def handle_postback():
     postback_data = {
         'datetime': request.args.get('datetime', 'N/A'),
         'timestamp': request.args.get('timestamp', 'N/A'),
-        'created': request.args.get('created_at', 'N/A'),
-        'offer_id': request.args.get('offer_name', 'N/A'),
+        'offer_id': request.args.get('offer_id', 'N/A'),
         'rotator_id': request.args.get('rotator_id', 'N/A'),
         'trans_id': request.args.get('trans_id', 'N/A'),
-        'revenue': request.args.get('amount', 'N/A'),
+        'revenue': request.args.get('revenue', 'N/A'),
         'status': request.args.get('status', 'N/A'),
         'goal': request.args.get('goal', 'N/A'),
         'clickid': request.args.get('clickid', 'N/A'),
