@@ -32,28 +32,28 @@ def send_email(postback_data):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_SENDER
     msg['To'] = EMAIL_RECEIVER
-    msg['Subject'] = f"Postback - ID {postback_data['trans_id']}"
+    msg['Subject'] = f"Notificação - Status: {postback_data['status']} ID {postback_data['trans_id']}"
 
     body = f"""
     - Offer ID: {postback_data['offer_id']}
     - Revenue: {postback_data['revenue']}
     - Status: {postback_data['status']}
     - Transaction ID: {postback_data['trans_id']}
-    - Click ID: {postback_data['clickid']}
+    - Click ID: {postback_data['click_id']}
     - Datetime: {postback_data['datetime']}
     """
     msg.attach(MIMEText(body, 'plain'))
 
     try:
         print(f"Tentando enviar e-mail de {EMAIL_SENDER} para {EMAIL_RECEIVER}")
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)  # Corrigido para SMTP_SERVER
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         print("Conexão SMTP estabelecida")
         server.starttls()
         print("STARTTLS ativado")
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
         print("Login SMTP bem-sucedido")
         server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, msg.as_string())
-        print(f"E-mail enviado para Postback ID {postback_data['trans_id']} - Destinatário: {EMAIL_RECEIVER}")
+        print(f"E-mail enviado para Notificação ID {postback_data['trans_id']} - Destinatário: {EMAIL_RECEIVER}")
         server.quit()
         return True
     except Exception as e:
@@ -66,13 +66,13 @@ def send_telegram_notification(postback_data):
         print("Notificação Telegram ignorada: TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não configurados.")
         return False
 
-    # Mensagem em texto simples
+    # Mensagem em texto simples com trans_id como primeira linha e status em linha separada
     message = (
+        f"- Transaction ID: {postback_data['trans_id']}\n"
+        f"- Status: {postback_data['status']}\n"
         f"- Offer ID: {postback_data['offer_id']}\n"
         f"- Revenue: {postback_data['revenue']}\n"
-        f"- Status: {postback_data['status']}\n"
-        f"- Transaction ID: {postback_data['trans_id']}\n"
-        f"- Click ID: {postback_data['clickid']}\n"
+        f"- Click ID: {postback_data['click_id']}\n"
         f"- Datetime: {postback_data['datetime']}\n"
     )
 
@@ -114,17 +114,11 @@ def handle_postback():
     # Obtém todos os parâmetros do Postback
     postback_data = {
         'datetime': request.args.get('datetime', 'N/A'),
-        'timestamp': request.args.get('timestamp', 'N/A'),
         'offer_id': request.args.get('offer_id', 'N/A'),
-        'rotator_id': request.args.get('rotator_id', 'N/A'),
         'trans_id': request.args.get('trans_id', 'N/A'),
         'revenue': request.args.get('revenue', 'N/A'),
         'status': request.args.get('status', 'N/A'),
-        'goal': request.args.get('goal', 'N/A'),
-        'clickid': request.args.get('clickid', 'N/A'),
-        'click_id': request.args.get('click_id', 'N/A'),
-        'subid': request.args.get('subid', 'N/A'),
-        'sub_id': request.args.get('sub_id', 'N/A')
+        'click_id': request.args.get('click_id', 'N/A')
     }
 
     # Converte o datetime para o fuso horário de Recife
@@ -135,7 +129,7 @@ def handle_postback():
             utc_dt = datetime.strptime(postback_data['datetime'], '%Y-%m-%dT%H:%M:%S')
             utc_dt = pytz.UTC.localize(utc_dt)  # Marca como UTC
             recife_dt = utc_dt.astimezone(recife_tz)
-            postback_data['datetime'] = recife_dt.strftime('%Y-%m-%d %H:%M:%S %Z')  # Ex.: 2025-05-03 15:00:00 BRT
+            postback_data['datetime'] = recife_dt.strftime('%Y-%m-%d %H:%M:%S %Z')  # Ex.: 2025-01-01 09:00:00 BRT
         except ValueError as e:
             print(f"Erro ao converter datetime: {e}")
             postback_data['datetime'] = f"Erro na conversão: {postback_data['datetime']}"
