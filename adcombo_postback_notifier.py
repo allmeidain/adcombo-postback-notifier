@@ -72,7 +72,7 @@ def send_telegram_notification(postback_data):
         f"- *Transaction ID*: {postback_data['trans_id']}\n"
         f"- *Click ID*: {postback_data['clickid']}\n"
         f"- *Datetime*: {postback_data['datetime']}\n"
-         )
+    )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
@@ -82,12 +82,14 @@ def send_telegram_notification(postback_data):
     }
 
     try:
+        print(f"Tentando enviar notificação Telegram para chat ID {TELEGRAM_CHAT_ID}")
         response = requests.post(url, data=payload)
+        print(f"Resposta da API do Telegram: {response.status_code} - {response.text}")
         if response.status_code == 200:
             print(f"Notificação Telegram enviada com sucesso para chat ID {TELEGRAM_CHAT_ID}")
             return True
         else:
-            print(f"Falha ao enviar notificação Telegram: {response.text}")
+            print(f"Falha ao enviar notificação Telegram: {response.status_code} - {response.text}")
             return False
     except Exception as e:
         print(f"Erro ao enviar notificação Telegram: {e}")
@@ -134,5 +136,5 @@ def handle_postback():
         return "Erro ao enviar notificações por e-mail e Telegram", 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Usa a porta definida pelo Render
+    port = int(os.environ.get("PORT", 10000))  # Usa a porta definida pelo Render
     app.run(host="0.0.0.0", port=port)
