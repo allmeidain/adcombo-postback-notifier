@@ -37,10 +37,10 @@ def send_email(postback_data):
     msg['Subject'] = f"Notificação - Status: {postback_data['status']} / ID {postback_data['trans_id']}"
 
     body = (
-        f"- Transaction ID: {postback_data['trans_id']}\n"
-        f"- Status: {postback_data['status']}\n"
-        f"- Offer ID: {postback_data['offer_id']}\n"
         f"- Revenue: {postback_data['revenue']}\n"
+        f"- Offer ID: {postback_data['offer_id']}\n"
+        f"- Status: {postback_data['status']}\n"
+        f"- Transaction ID: {postback_data['trans_id']}\n"
         f"- Click ID: {postback_data['click_id']}\n"
         f"- ClickID: {postback_data['clickid']}\n"
         f"- Datetime Original: {postback_data['datetime_original']}\n"
@@ -72,10 +72,10 @@ def send_telegram_notification(postback_data):
 
     # Mensagem em texto simples com trans_id como primeira linha
     message = (
-        f"- Transaction ID: {postback_data['trans_id']}\n"
-        f"- Status: {postback_data['status']}\n"
-        f"- Offer ID: {postback_data['offer_id']}\n"
         f"- Revenue: {postback_data['revenue']}\n"
+        f"- Offer ID: {postback_data['offer_id']}\n"
+        f"- Status: {postback_data['status']}\n"
+        f"- Transaction ID: {postback_data['trans_id']}\n"
         f"- Click ID: {postback_data['click_id']}\n"
         f"- ClickID: {postback_data['clickid']}\n"
         f"- Datetime Original: {postback_data['datetime_original']}\n"
