@@ -43,6 +43,7 @@ def send_email(postback_data):
         f"- Transaction ID: {postback_data['trans_id']}\n"
         f"- ClickID: {postback_data['clickid']}\n"
         f"- Datetime Local: {postback_data['datetime']}\n"
+        f"- Campaignid : {postback_data['campaignid']}\n"
     )
     msg.attach(MIMEText(body, 'plain'))
 
@@ -76,6 +77,7 @@ def send_telegram_notification(postback_data):
         f"- Transaction ID: {postback_data['trans_id']}\n"
         f"- ClickID: {postback_data['clickid']}\n"
         f"- Datetime Local: {postback_data['datetime']}\n"
+        f"- Campaignid: {postback_data['campaignid']}\n"
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -122,7 +124,8 @@ def handle_postback():
         'revenue': request.args.get('revenue', 'N/A'),
         'status': request.args.get('status', 'N/A'),
         'click_id': request.args.get('click_id', 'N/A'),
-        'clickid': request.args.get('clickid', 'N/A')
+        'clickid': request.args.get('clickid', 'N/A'),
+        'campaignid': request.args.get('campaignid', 'N/A')
     }
 
     # Converte o datetime para o fuso horário de Recife
