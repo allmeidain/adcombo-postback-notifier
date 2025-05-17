@@ -1,4 +1,4 @@
-# Versão: v3.9 - Data: 2025-05-03
+# Versão: v4.5 - Data: 2025-05-17
 
 from flask import Flask, request
 import os
@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import pytz
+from tursodb import TursoDB
 
 app = Flask(__name__)
 
@@ -20,14 +21,57 @@ SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")  # Valor padrão
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))  # Valor padrão
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+TURSO_URL = os.environ.get("TURSO_URL")
+TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN")
 
 # Verifica se as variáveis obrigatórias estão definidas
-if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
-    raise ValueError("Uma ou mais variáveis de ambiente não estão definidas: API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER")
+if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER, TURSO_URL, TURSO_AUTH_TOKEN]):
+    raise ValueError("Uma ou mais variáveis de ambiente não estão definidas: API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER, TURSO_URL, TURSO_AUTH_TOKEN")
 
 # Verifica se as variáveis do Telegram estão definidas (opcional, para evitar falhas se não configuradas)
 if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
     print("Aviso: Variáveis TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não estão definidas. Notificações pelo Telegram serão ignoradas.")
+
+# Configuração do Turso
+def get_turso_db():
+    return TursoDB(TURSO_URL, TURSO_AUTH_TOKEN)
+
+def init_turso_db():
+    """Inicializa a tabela no Turso se não existir."""
+    db = get_turso_db()
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS postbacks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            revenue TEXT,
+            offer_id TEXT,
+            status TEXT,
+            trans_id TEXT,
+            clickid TEXT,
+            datetime_local TEXT,
+            gclid TEXT,
+            campaignid TEXT
+        )
+    ''')
+    db.commit()
+
+def save_to_turso(postback_data):
+    """Salva os dados do postback no Turso."""
+    db = get_turso_db()
+    db.execute('''
+        INSERT INTO postbacks (revenue, offer_id, status, trans_id, clickid, datetime_local, gclid, campaignid)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        postback_data['revenue'],
+        postback_data['offer_id'],
+        postback_data['status'],
+        postback_data['trans_id'],
+        postback_data['clickid'],
+        postback_data['datetime'],
+        postback_data['gclid'],
+        postback_data['campaignid']
+    ))
+    db.commit()
+    print("Dados salvos no Turso")
 
 def send_email(postback_data):
     """Envia e-mail com todos os parâmetros do Postback."""
@@ -44,7 +88,7 @@ def send_email(postback_data):
         f"- ClickID: {postback_data['clickid']}\n"
         f"- Datetime Local: {postback_data['datetime']}\n"
         f"- Gclid: {postback_data['gclid']}\n"
-        f"- Campaignid : {postback_data['campaignid']}\n"
+        f"- Campaignid: {postback_data['campaignid']}\n"
     )
     msg.attach(MIMEText(body, 'plain'))
 
@@ -70,7 +114,6 @@ def send_telegram_notification(postback_data):
         print("Notificação Telegram ignorada: TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não configurados.")
         return False
 
-    # Mensagem em texto simples com trans_id como primeira linha
     message = (
         f"- Revenue: {postback_data['revenue']}\n"
         f"- Offer ID: {postback_data['offer_id']}\n"
@@ -120,7 +163,7 @@ def handle_postback():
     # Obtém todos os parâmetros do Postback
     postback_data = {
         'datetime': request.args.get('datetime', 'N/A'),
-        'datetime_original': request.args.get('datetime', 'N/A'),  # Armazena a data original
+        'datetime_original': request.args.get('datetime', 'N/A'),
         'offer_id': request.args.get('offer_id', 'N/A'),
         'trans_id': request.args.get('trans_id', 'N/A'),
         'revenue': request.args.get('revenue', 'N/A'),
@@ -135,18 +178,25 @@ def handle_postback():
     recife_tz = pytz.timezone('America/Recife')
     if postback_data['datetime'] != 'N/A':
         try:
-            # Tenta converter com o formato ISO (com T)
             try:
                 utc_dt = datetime.strptime(postback_data['datetime'], '%Y-%m-%dT%H:%M:%S')
             except ValueError:
-                # Se falhar, tenta com o formato sem T (com espaço)
                 utc_dt = datetime.strptime(postback_data['datetime'], '%Y-%m-%d %H:%M:%S')
-            utc_dt = pytz.UTC.localize(utc_dt)  # Marca como UTC
+            utc_dt = pytz.UTC.localize(utc_dt)
             recife_dt = utc_dt.astimezone(recife_tz)
-            postback_data['datetime'] = recife_dt.strftime('%Y-%m-%d %H:%M:%S %Z')  # Ex.: 2025-01-01 09:00:00 BRT
+            postback_data['datetime'] = recife_dt.strftime('%Y-%m-%d %H:%M:%S %Z')
         except ValueError as e:
             print(f"Erro ao converter datetime: {e}")
             postback_data['datetime'] = f"Erro na conversão: {postback_data['datetime']}"
+
+    # Inicializa o banco de dados Turso (se necessário)
+    init_turso_db()
+
+    # Salva os dados no Turso
+    try:
+        save_to_turso(postback_data)
+    except Exception as e:
+        print(f"Erro ao salvar dados no Turso: {e}")
 
     # Envia notificação por e-mail e Telegram
     email_success = send_email(postback_data)
@@ -158,5 +208,5 @@ def handle_postback():
         return "Erro ao enviar notificações por e-mail e Telegram", 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Usa a porta definida pelo Render
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
