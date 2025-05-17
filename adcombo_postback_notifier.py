@@ -1,4 +1,4 @@
-# Versão: v4.5 - Data: 2025-05-17
+# Versão: v4.6 - Data: 2025-05-17
 
 from flask import Flask, request
 import os
@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import pytz
-from tursodb import TursoDB
+from libsql_client import Client
 
 app = Flask(__name__)
 
@@ -32,46 +32,50 @@ if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER, TURSO_URL, TU
 if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
     print("Aviso: Variáveis TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não estão definidas. Notificações pelo Telegram serão ignoradas.")
 
-# Configuração do Turso
-def get_turso_db():
-    return TursoDB(TURSO_URL, TURSO_AUTH_TOKEN)
+# Configuração do Turso com libsql-client
+def get_turso_client():
+    return Client(url=TURSO_URL, auth_token=TURSO_AUTH_TOKEN)
 
 def init_turso_db():
     """Inicializa a tabela no Turso se não existir."""
-    db = get_turso_db()
-    db.execute('''
-        CREATE TABLE IF NOT EXISTS postbacks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            revenue TEXT,
-            offer_id TEXT,
-            status TEXT,
-            trans_id TEXT,
-            clickid TEXT,
-            datetime_local TEXT,
-            gclid TEXT,
-            campaignid TEXT
-        )
-    ''')
-    db.commit()
+    client = get_turso_client()
+    try:
+        client.execute('''
+            CREATE TABLE IF NOT EXISTS postbacks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                revenue TEXT,
+                offer_id TEXT,
+                status TEXT,
+                trans_id TEXT,
+                clickid TEXT,
+                datetime_local TEXT,
+                gclid TEXT,
+                campaignid TEXT
+            )
+        ''')
+    except Exception as e:
+        print(f"Erro ao inicializar tabela no Turso: {e}")
 
 def save_to_turso(postback_data):
     """Salva os dados do postback no Turso."""
-    db = get_turso_db()
-    db.execute('''
-        INSERT INTO postbacks (revenue, offer_id, status, trans_id, clickid, datetime_local, gclid, campaignid)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        postback_data['revenue'],
-        postback_data['offer_id'],
-        postback_data['status'],
-        postback_data['trans_id'],
-        postback_data['clickid'],
-        postback_data['datetime'],
-        postback_data['gclid'],
-        postback_data['campaignid']
-    ))
-    db.commit()
-    print("Dados salvos no Turso")
+    client = get_turso_client()
+    try:
+        client.execute('''
+            INSERT INTO postbacks (revenue, offer_id, status, trans_id, clickid, datetime_local, gclid, campaignid)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            postback_data['revenue'],
+            postback_data['offer_id'],
+            postback_data['status'],
+            postback_data['trans_id'],
+            postback_data['clickid'],
+            postback_data['datetime'],
+            postback_data['gclid'],
+            postback_data['campaignid']
+        ))
+        print("Dados salvos no Turso")
+    except Exception as e:
+        print(f"Erro ao salvar dados no Turso: {e}")
 
 def send_email(postback_data):
     """Envia e-mail com todos os parâmetros do Postback."""
