@@ -1,4 +1,4 @@
-# Versão: v4.2 - Data: 2025-05-20
+# Versão: v4.3 - Data: 2025-05-20
 
 from flask import Flask, request
 import os
@@ -172,7 +172,7 @@ def handle_postback():
                 utc_dt = datetime.strptime(postback_data['datetime'], '%Y-%m-%d %H:%M:%S')
             utc_dt = pytz.UTC.localize(utc_dt)
             recife_dt = utc_dt.astimezone(recife_tz)
-            postback_data['datetime'] = recife_dt.strftime('%Y-%m-%d %H:%M:%S %Z')
+            postback_data['datetime'] = recife_dt.strftime('%Y-%m-%d %H:%M:%S%z')
         except ValueError as e:
             print(f"Erro ao converter datetime: {e}")
             postback_data['datetime'] = f"Erro na conversão: {postback_data['datetime']}"
