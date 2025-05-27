@@ -1,4 +1,4 @@
-# Versão: v4.3 - Data: 2025-05-20
+# Versão: v4.4 - Data: 2025-05-26
 
 from flask import Flask, request
 import os
@@ -20,8 +20,6 @@ SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")  # Valor padrão
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))  # Valor padrão
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-TELEGRAM_BOT_TOKEN_ALT = os.environ.get("TELEGRAM_BOT_TOKEN_ALT")
-TELEGRAM_CHAT_ID_ALT = os.environ.get("TELEGRAM_CHAT_ID_ALT")
 
 # Verifica se as variáveis obrigatórias estão definidas
 if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
@@ -30,8 +28,6 @@ if not all([API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
 # Verifica se as variáveis do Telegram estão definidas (opcional, para evitar falhas se não configuradas)
 if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
     print("Aviso: Variáveis TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID não estão definidas. Notificações pelo Telegram serão ignoradas.")
-if not all([TELEGRAM_BOT_TOKEN_ALT, TELEGRAM_CHAT_ID_ALT]):
-    print("Aviso: Variáveis TELEGRAM_BOT_TOKEN_ALT e/ou TELEGRAM_CHAT_ID_ALT não estão definidas. Notificações pelo Telegram alternativo serão ignoradas.")
 
 def send_email(postback_data):
     """Envia e-mail com todos os parâmetros do Postback."""
@@ -75,6 +71,7 @@ def send_telegram_notification(postback_data):
         return False
 
     message = (
+        f"- Campaignid: {postback_data['campaignid']}\n"
         f"- Revenue: {postback_data['revenue']}\n"
         f"- Offer ID: {postback_data['offer_id']}\n"
         f"- Status: {postback_data['status']}\n"
@@ -82,7 +79,6 @@ def send_telegram_notification(postback_data):
         f"- ClickID: {postback_data['clickid']}\n"
         f"- Datetime Local: {postback_data['datetime']}\n"
         f"- Gclid: {postback_data['gclid']}\n"
-        f"- Campaignid: {postback_data['campaignid']}\n"
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -103,34 +99,6 @@ def send_telegram_notification(postback_data):
             return False
     except Exception as e:
         print(f"Erro ao enviar notificação Telegram: {e}")
-        return False
-
-def send_telegram_notification_alt(postback_data):
-    """Envia notificação para outro bot do Telegram com ClickID, Gclid e Datetime Local."""
-    if not all([TELEGRAM_BOT_TOKEN_ALT, TELEGRAM_CHAT_ID_ALT]):
-        print("Notificação Telegram alternativo ignorada: TELEGRAM_BOT_TOKEN_ALT e/ou TELEGRAM_CHAT_ID_ALT não configurados.")
-        return False
-
-    message = f"{postback_data['clickid']}, {postback_data['gclid']}, {postback_data['datetime']}"
-
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN_ALT}/sendMessage"
-    payload = {
-        'chat_id': TELEGRAM_CHAT_ID_ALT,
-        'text': message
-    }
-
-    try:
-        print(f"Tentando enviar notificação Telegram alternativo para chat ID {TELEGRAM_CHAT_ID_ALT}")
-        response = requests.post(url, data=payload)
-        print(f"Resposta da API do Telegram alternativo: {response.status_code} - {response.text}")
-        if response.status_code == 200:
-            print(f"Notificação Telegram alternativo enviada com sucesso para chat ID {TELEGRAM_CHAT_ID_ALT}")
-            return True
-        else:
-            print(f"Falha ao enviar notificação Telegram alternativo: {response.status_code} - {response.text}")
-            return False
-    except Exception as e:
-        print(f"Erro ao enviar notificação Telegram alternativo: {e}")
         return False
 
 @app.route('/ping', methods=['GET'])
@@ -180,10 +148,9 @@ def handle_postback():
     # Envia notificações
     email_success = send_email(postback_data)
     telegram_success = send_telegram_notification(postback_data)
-    telegram_alt_success = send_telegram_notification_alt(postback_data)
 
-    if email_success or telegram_success or telegram_alt_success:
-        return f"Postback processado (Status: {postback_data['status']}) - E-mail: {'enviado' if email_success else 'falhou'} - Telegram: {'enviado' if telegram_success else 'falhou'} - Telegram Alt: {'enviado' if telegram_alt_success else 'falhou'}", 200
+    if email_success or telegram_success:
+        return f"Postback processado (Status: {postback_data['status']}) - E-mail: {'enviado' if email_success else 'falhou'} - Telegram: {'enviado' if telegram_success else 'falhou'}", 200
     else:
         return "Erro ao enviar notificações por e-mail e Telegram", 500
 
